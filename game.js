@@ -58,30 +58,148 @@
   }
 
   // ================= Audio (Web Audio, nessun file) =================
+  // Catena: voci → master → filtro morbido → compressore → uscita, più un riverbero leggero.
   let actx = null;
-  function tone(freq, dur = 0.1, type = 'sine', vol = 0.15, when = 0) {
-    if (S.muted) return;
+  let master = null;
+  let verb = null;
+  let noiseBuf = null;
+  const mtof = (m) => 440 * Math.pow(2, (m - 69) / 12);
+
+  function audio() {
+    if (S.muted) return null;
     try {
-      actx = actx || new (window.AudioContext || window.webkitAudioContext)();
-      const t = actx.currentTime + when;
-      const o = actx.createOscillator();
-      const g = actx.createGain();
-      o.type = type;
-      o.frequency.setValueAtTime(freq, t);
-      g.gain.setValueAtTime(vol, t);
-      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-      o.connect(g).connect(actx.destination);
-      o.start(t);
-      o.stop(t + dur + 0.05);
-    } catch (e) { /* audio non disponibile */ }
+      if (!actx) {
+        actx = new (window.AudioContext || window.webkitAudioContext)();
+        const comp = actx.createDynamicsCompressor();
+        comp.threshold.value = -20;
+        comp.ratio.value = 4;
+        const soft = actx.createBiquadFilter();
+        soft.type = 'lowpass';
+        soft.frequency.value = 6500;
+        master = actx.createGain();
+        master.gain.value = 0.85;
+        master.connect(soft).connect(comp).connect(actx.destination);
+
+        // Riverbero generato (nessun file): rumore che decade
+        const len = Math.floor(actx.sampleRate * 1.6);
+        const ir = actx.createBuffer(2, len, actx.sampleRate);
+        for (let ch = 0; ch < 2; ch++) {
+          const d = ir.getChannelData(ch);
+          for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3.2);
+        }
+        const conv = actx.createConvolver();
+        conv.buffer = ir;
+        verb = actx.createGain();
+        verb.gain.value = 0.22;
+        verb.connect(conv).connect(soft);
+
+        noiseBuf = actx.createBuffer(1, actx.sampleRate, actx.sampleRate);
+        const nd = noiseBuf.getChannelData(0);
+        for (let i = 0; i < nd.length; i++) nd[i] = Math.random() * 2 - 1;
+      }
+      if (actx.state === 'suspended') actx.resume();
+      return actx;
+    } catch (e) {
+      return null;
+    }
   }
+
+  // Voce singola con attacco morbido (niente "click") e decadimento esponenziale
+  function voice(freq, { type = 'sine', vol = 0.15, when = 0, dur = 0.4, attack = 0.006, wet = 0.4, glideTo = 0 } = {}) {
+    const a = audio();
+    if (!a) return;
+    const t = a.currentTime + when;
+    const o = a.createOscillator();
+    const g = a.createGain();
+    o.type = type;
+    o.frequency.setValueAtTime(freq, t);
+    if (glideTo) o.frequency.exponentialRampToValueAtTime(glideTo, t + dur);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol, t + attack);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g).connect(master);
+    if (wet) {
+      const s = a.createGain();
+      s.gain.value = wet;
+      g.connect(s).connect(verb);
+    }
+    o.start(t);
+    o.stop(t + dur + 0.05);
+  }
+
+  // Rumore filtrato: legnetto della ruota e "whoosh"
+  function noise({ when = 0, dur = 0.05, vol = 0.1, freq = 2500, q = 1.5, freqTo = 0, attack = 0.002, wet = 0 } = {}) {
+    const a = audio();
+    if (!a) return;
+    const t = a.currentTime + when;
+    const src = a.createBufferSource();
+    src.buffer = noiseBuf;
+    const f = a.createBiquadFilter();
+    f.type = 'bandpass';
+    f.Q.value = q;
+    f.frequency.setValueAtTime(freq, t);
+    if (freqTo) f.frequency.exponentialRampToValueAtTime(freqTo, t + dur);
+    const g = a.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol, t + attack);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    src.connect(f).connect(g).connect(master);
+    if (wet) {
+      const s = a.createGain();
+      s.gain.value = wet;
+      g.connect(s).connect(verb);
+    }
+    src.start(t, Math.random() * 0.5, dur + 0.05);
+  }
+
+  // Campanella: fondamentale + armoniche che si spengono prima
+  function bell(m, { vol = 0.13, when = 0, dur = 1.3 } = {}) {
+    const f = mtof(m);
+    voice(f, { vol, when, dur });
+    voice(f * 2, { vol: vol * 0.3, when, dur: dur * 0.55 });
+    voice(f * 3.01, { vol: vol * 0.1, when, dur: dur * 0.3 });
+  }
+  // Marimba: corpo caldo e "colpo" breve
+  function marimba(m, { vol = 0.16, when = 0 } = {}) {
+    const f = mtof(m);
+    voice(f, { vol, when, dur: 0.55, wet: 0.3 });
+    voice(f * 4, { vol: vol * 0.18, when, dur: 0.08, wet: 0 });
+  }
+
+  const PENTA = [72, 74, 76, 79, 81, 84, 86, 88, 91, 93]; // Do maggiore pentatonica
   const sfx = {
-    tick: () => tone(1500, 0.025, 'square', 0.04),
-    ding: () => { tone(1046, 0.3, 'triangle', 0.14); tone(1568, 0.25, 'sine', 0.06, 0.03); },
-    buzz: () => { tone(150, 0.35, 'sawtooth', 0.1); tone(110, 0.35, 'sawtooth', 0.08, 0.05); },
-    bankrupt: () => [420, 320, 220, 140].forEach((f, i) => tone(f, 0.28, 'sawtooth', 0.09, i * 0.14)),
-    win: () => [523, 659, 784, 1047, 1319].forEach((f, i) => tone(f, 0.35, 'triangle', 0.13, i * 0.11)),
-    buy: () => { tone(1318, 0.12, 'sine', 0.1); tone(1760, 0.18, 'sine', 0.08, 0.08); },
+    // Legnetto morbido sui pioli: leggermente diverso ogni volta
+    tick: () => {
+      noise({ dur: 0.035, vol: 0.09, freq: rand(1700, 2100), q: 3 });
+      voice(rand(560, 620), { type: 'triangle', vol: 0.05, dur: 0.05, attack: 0.002, wet: 0 });
+    },
+    whoosh: () => noise({ dur: 0.9, vol: 0.07, freq: 300, freqTo: 1800, q: 0.7, attack: 0.25, wet: 0.3 }),
+    land: () => { marimba(79); marimba(84, { when: 0.1 }); },
+    ding: (i = 0) => bell(PENTA[i % PENTA.length], { vol: 0.12 }),
+    miss: () => {
+      marimba(64, { vol: 0.14 });
+      marimba(60, { vol: 0.12, when: 0.16 });
+    },
+    passa: () => {
+      marimba(69, { vol: 0.12 });
+      marimba(64, { vol: 0.12, when: 0.14 });
+      marimba(62, { vol: 0.1, when: 0.28 });
+    },
+    bankrupt: () => {
+      voice(mtof(67), { type: 'triangle', vol: 0.14, dur: 1.1, glideTo: mtof(43), wet: 0.35 });
+      voice(mtof(55), { type: 'sine', vol: 0.12, dur: 1.1, glideTo: mtof(31), wet: 0.2 });
+      noise({ when: 0.05, dur: 0.4, vol: 0.06, freq: 220, q: 0.8 });
+    },
+    buy: () => { bell(83, { vol: 0.09, dur: 0.25 }); bell(88, { vol: 0.11, when: 0.08, dur: 0.9 }); },
+    win: () => {
+      [72, 76, 79, 84].forEach((m, i) => bell(m, { vol: 0.12, when: i * 0.1 }));
+      [84, 88, 91].forEach((m) => bell(m, { vol: 0.08, when: 0.45, dur: 2 }));
+      for (let i = 0; i < 6; i++) bell(PENTA[5 + (i % 5)] + 12, { vol: 0.03, when: 0.6 + i * 0.07, dur: 0.5 });
+    },
+    fanfare: () => {
+      [67, 72, 76, 79, 76, 79, 84].forEach((m, i) => marimba(m, { vol: 0.14, when: i * 0.13 }));
+      [72, 76, 79, 84].forEach((m) => bell(m, { vol: 0.09, when: 0.95, dur: 2.4 }));
+    },
   };
 
   // ================= Wheel =================
@@ -191,6 +309,7 @@
     $('#lastSpin').textContent = 'Gira, gira, gira…';
     updateUI();
     const g = S.gen;
+    sfx.whoosh();
     const start = S.rotation;
     const extra = Math.PI * 2 * rand(3.5, 5.5) + rand(0, Math.PI * 2);
     const dur = rand(4000, 5400);
@@ -222,12 +341,13 @@
       shakePlayer(S.cur);
       nextTurn(1800);
     } else if (seg.t === 'PASSA') {
-      sfx.buzz();
+      sfx.passa();
       ls.innerHTML = '<b class="bad">PASSA</b>';
       say(`⏭️ Passa! ${p.name} cede il turno.`, 'bad');
       nextTurn(1500);
     } else {
       S.spinValue = seg.v;
+      sfx.land();
       S.phase = 'consonant';
       ls.innerHTML = `Valore: <b>${fmt(seg.v)}</b>`;
       say(p.cpu ? `${fmt(seg.v)} a consonante. ${p.name} ci pensa…` : `${fmt(seg.v)} a consonante! Scegli una consonante.`);
@@ -287,7 +407,7 @@
     const tiles = letterTiles(L);
     tiles.forEach((t, i) => {
       t.shown = true;
-      later(() => { t.el.classList.add('lit'); sfx.ding(); }, i * 420);
+      later(() => { t.el.classList.add('lit'); sfx.ding(i); }, i * 420);
       later(() => { t.el.classList.remove('lit'); t.el.classList.add('show'); }, i * 420 + 380);
     });
     return tiles.length * 420 + 450;
@@ -327,7 +447,7 @@
         promptTurn();
       }, ms);
     } else {
-      sfx.buzz();
+      sfx.miss();
       say(`❌ Nessuna "${L}". ${S.players.length > 1 ? 'Il turno passa.' : ''}`, 'bad');
       nextTurn(1500);
     }
@@ -350,7 +470,7 @@
       say(`🎉 Esatto! ${p.name} risolve la frase!`, 'good');
       winRound();
     } else {
-      sfx.buzz();
+      sfx.miss();
       say(`❌ "${text.toUpperCase()}" non è la soluzione.`, 'bad');
       S.phase = 'wait';
       nextTurn(1600);
@@ -558,7 +678,7 @@
     const winner = ranking[0];
     const isRecord = saveScores();
     confetti();
-    sfx.win();
+    sfx.fanfare();
     showModal(`
       <h3>${winner.cpu ? `Vince ${escapeHtml(winner.name)} 🤖` : `Complimenti ${escapeHtml(winner.name)}! 🏆`}</h3>
       ${isRecord ? '<p class="muted" style="color:var(--gold)">Nuovo record in classifica!</p>' : ''}
