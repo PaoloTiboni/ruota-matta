@@ -396,3 +396,5 @@ kbd { background: rgba(255,255,255,.12); border-radius: 5px; padding: 1px 6px; f
 .joke-who { font-size: .8rem; letter-spacing: 1px; text-transform: uppercase; color: var(--gold); font-weight: 700; }
 .joke-q { margin: 0; font-size: 1.1rem; font-weight: 600; }
 .joke-a { margin: 0; font-family: 'Bungee', sans-serif; font-size: 1.25rem; color: var(--gold); animation: bubblePop .4s cubic-bezier(.34, 1.56, .64, 1); }
+
+.btn.cancel { background: rgba(255, 209, 102, .18); border-color: var(--gold); color: var(--gold); }

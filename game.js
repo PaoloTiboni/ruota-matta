@@ -609,6 +609,16 @@
     if (p.cpu) cpuAct();
   }
 
+  // Restituisce i soldi se la vocale è stata comprata per sbaglio
+  function cancelVowel() {
+    if (S.phase !== 'vowel') return;
+    P().round += VOWEL_COST;
+    S.phase = 'turn';
+    host('present', 'Nessun problema, soldi restituiti!');
+    say(`Acquisto annullato: ${fmt(VOWEL_COST)} restituiti.`);
+    updateUI();
+  }
+
   function attemptSolve(text) {
     const p = P();
     if (norm(text) === norm(S.puzzle.t)) {
@@ -772,7 +782,12 @@
     const canSpin = human && S.phase === 'turn' && cons > 0;
     $('#spinBtn').disabled = !canSpin;
     $('#wheelWrap').classList.toggle('ready', canSpin);
-    $('#buyBtn').disabled = !(human && S.phase === 'turn' && p.round >= VOWEL_COST && vow > 0);
+    // Durante la scelta della vocale il pulsante diventa "Annulla vocale" (rimborso)
+    const buy = $('#buyBtn');
+    const canCancel = human && S.phase === 'vowel';
+    buy.classList.toggle('cancel', canCancel);
+    buy.innerHTML = canCancel ? `Annulla vocale <small>+${VOWEL_COST} €</small>` : `Compra vocale <small>${VOWEL_COST} €</small>`;
+    buy.disabled = !(canCancel || (human && S.phase === 'turn' && p.round >= VOWEL_COST && vow > 0));
     $('#solveBtn').disabled = !(human && S.phase === 'turn');
 
     const puzzleKeys = new Set(S.tiles.map((t) => t.key));
@@ -984,7 +999,11 @@
 
   // ================= Events =================
   $('#spinBtn').addEventListener('click', () => humanTurn() && spin());
-  $('#buyBtn').addEventListener('click', () => humanTurn() && buyVowel());
+  $('#buyBtn').addEventListener('click', () => {
+    if (!humanTurn()) return;
+    if (S.phase === 'vowel') cancelVowel();
+    else buyVowel();
+  });
   $('#solveBtn').addEventListener('click', openSolve);
   $('#solveCancel').addEventListener('click', () => closeSolve());
   $('#solveForm').addEventListener('submit', (e) => {
