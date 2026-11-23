@@ -12,8 +12,8 @@
   const CPU_VOWELS = 'EAIOU'.split('');
   const PLAYER_COLORS = ['#ffcc4d', '#4dd4ac', '#7aa2ff'];
   const PALETTE = ['#ff5d73', '#ffb547', '#4dd4ac', '#5b8cff', '#b16cff', '#ff8a3d', '#2ec5e6', '#f25fd0'];
-  const LB_KEY = 'giralafrase.leaderboard';
-  const MUTE_KEY = 'giralafrase.muted';
+  const LB_KEY = 'ruotamatta.leaderboard';
+  const MUTE_KEY = 'ruotamatta.muted';
 
   const SEGMENTS = [
     { v: 500 }, { v: 300 }, { v: 900 }, { t: 'PASSA' }, { v: 400 }, { v: 600 },

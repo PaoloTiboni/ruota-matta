@@ -1,11 +1,11 @@
-# 🎡 Gira la Frase
+# 🎡 Ruota Matta
 
 Un gioco di parole a ruota per browser: **gira la ruota, indovina le lettere, risolvi la frase**.
 Scritto in **HTML, CSS e JavaScript vanilla**: niente framework, niente build e nessuna dipendenza (a parte i font di Google).
 
 ## Caratteristiche
 
-- **Ruota disegnata su Canvas** con rotazione ease-out, ticchettio sincronizzato a ogni settore e freccia che "rimbalza".
+- **Ruota disegnata su Canvas** con rotazione ease-out, un carillon intonato a ogni piolo e una freccia che "rimbalza".
 - **Tabellone animato** con caselle che si accendono e si girano; le parole vanno a capo intere.
 - **Fino a 3 giocatori**, ognuno umano o **CPU** con 3 livelli di difficoltà.
 - **Regole complete**: valore × occorrenze, vocali a 250 €, Bancarotta, Passa, bonus soluzione, 3 round.
