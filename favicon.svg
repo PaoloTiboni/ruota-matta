@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Ruota: 8 spicchi disegnati con stroke-dasharray (circonferenza r=14 ≈ 87.96) -->
+  <circle cx="32" cy="32" r="31" fill="#a8452a"/>
+  <circle cx="32" cy="32" r="28" fill="#4a1414"/>
+  <g transform="rotate(-90 32 32)" fill="none" stroke-width="28">
+    <circle cx="32" cy="32" r="14" stroke="#e63946" stroke-dasharray="11 77"/>
+    <circle cx="32" cy="32" r="14" stroke="#f7b538" stroke-dasharray="11 77" stroke-dashoffset="-11"/>
+    <circle cx="32" cy="32" r="14" stroke="#2a9d8f" stroke-dasharray="11 77" stroke-dashoffset="-22"/>
+    <circle cx="32" cy="32" r="14" stroke="#ff7b39" stroke-dasharray="11 77" stroke-dashoffset="-33"/>
+    <circle cx="32" cy="32" r="14" stroke="#c9406a" stroke-dasharray="11 77" stroke-dashoffset="-44"/>
+    <circle cx="32" cy="32" r="14" stroke="#e9a23b" stroke-dasharray="11 77" stroke-dashoffset="-55"/>
+    <circle cx="32" cy="32" r="14" stroke="#3d8bd9" stroke-dasharray="11 77" stroke-dashoffset="-66"/>
+    <circle cx="32" cy="32" r="14" stroke="#8e4ec6" stroke-dasharray="11 77" stroke-dashoffset="-77"/>
+  </g>
+  <circle cx="32" cy="32" r="8" fill="#ffcc4d" stroke="#fff3c4" stroke-width="2"/>
+  <path d="M25 1 L39 1 L32 13 Z" fill="#ffcc4d" stroke="#9a5d00" stroke-width="1.5" stroke-linejoin="round"/>
+</svg>
