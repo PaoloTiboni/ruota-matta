@@ -1054,5 +1054,10 @@
   addEventListener('resize', () => { clearTimeout(resizeT); resizeT = setTimeout(buildAudience, 250); });
   host('present', 'Benvenuti a Ruota Matta! Cliccami per una battuta 😄', 0);
   drawWheel();
+  // ?demo avvia subito una partita (utile per anteprime e screenshot)
+  if (new URLSearchParams(location.search).has('demo')) {
+    $('#setup').classList.add('hidden');
+    startGame([{ name: 'Giocatore 1', cpu: false }, { name: 'Robo', cpu: true }]);
+  }
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(drawWheel);
 })();
