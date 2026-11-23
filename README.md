@@ -1,5 +1,6 @@
 # 🎡 Ruota Matta
-n**▶️ [Gioca online](https://paolotiboni.github.io/ruota-matta/)**
+
+**▶️ [Gioca online](https://paolotiboni.github.io/ruota-matta/)**
 
 Un gioco di parole a ruota per browser: **gira la ruota, indovina le lettere, risolvi la frase**.
 Scritto in **HTML, CSS e JavaScript vanilla**: niente framework, niente build e nessuna dipendenza (a parte i font di Google).
