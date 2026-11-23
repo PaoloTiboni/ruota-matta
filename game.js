@@ -219,6 +219,12 @@
         noise({ when, dur: rand(0.02, 0.05), vol: rand(0.02, 0.06) * env, freq: rand(900, 2600), q: rand(0.8, 2), wet: 0.4 });
       }
     },
+    // Ba-dum-tss: due colpi di tamburo e il piatto
+    rimshot: (when = 0) => {
+      voice(190, { vol: 0.2, dur: 0.18, when, glideTo: 110, wet: 0.2 });
+      voice(150, { vol: 0.2, dur: 0.2, when: when + 0.13, glideTo: 85, wet: 0.2 });
+      noise({ when: when + 0.3, dur: 0.9, vol: 0.09, freq: 6500, q: 0.4, attack: 0.003, wet: 0.5 });
+    },
     // "Ooooh" del pubblico: voci morbide filtrate che scendono
     ooh: () => {
       const a = audio();
@@ -252,6 +258,12 @@
   const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
   let hostTimer = null;
   let bubbleTimer = null;
+  let jokeTimer = null;
+  let jokeDeck = [];
+  const nextJoke = () => {
+    if (!jokeDeck.length) jokeDeck = shuffle(window.JOKES || []);
+    return jokeDeck.pop();
+  };
   // mood: idle | present | spin | happy | wow | shock | sad | think. ms = 0 → resta così
   function host(mood, text, ms = 2600) {
     const h = $('#host');
@@ -261,6 +273,7 @@
     h.dataset.mood = mood;
     clearTimeout(hostTimer);
     clearTimeout(bubbleTimer);
+    clearTimeout(jokeTimer);
     if (text) {
       b.textContent = text;
       b.classList.remove('hide', 'pop');
@@ -271,6 +284,18 @@
       hostTimer = setTimeout(() => { h.dataset.mood = 'idle'; }, ms);
       bubbleTimer = setTimeout(() => b.classList.add('hide'), ms + 400);
     }
+  }
+
+  // Il presentatore racconta una freddura: domanda, pausa, risposta + ba-dum-tss
+  function tellJoke() {
+    const j = nextJoke();
+    if (!j) return;
+    host('think', j.q, 0);
+    jokeTimer = setTimeout(() => {
+      host('happy', `${j.a} 🥁`, 3800);
+      sfx.rimshot();
+      crowd('clap', 1000);
+    }, 2800);
   }
 
   let crowdTimer = null;
@@ -789,13 +814,26 @@
 
   function showRoundModal(p, prize) {
     const last = S.round >= ROUNDS;
+    const joke = nextJoke() || { q: '', a: '' };
     showModal(`
       <h3>Round ${S.round} vinto!</h3>
       <p class="muted">${escapeHtml(p.name)} si aggiudica</p>
       <div class="result-big">+${fmt(prize)}</div>
       <div class="solution">${escapeHtml(S.puzzle.t)}</div>
       <p class="muted">incluso il bonus soluzione di ${fmt(SOLVE_BONUS)}</p>
+      <div class="joke">
+        <span class="joke-who">🎤 Paolo chiede:</span>
+        <p class="joke-q">${escapeHtml(joke.q)}</p>
+        <button class="btn ghost" id="jokeBtn">Sentiamo la risposta…</button>
+        <p class="joke-a hidden" id="jokeA">${escapeHtml(joke.a)} 🥁</p>
+      </div>
       <button class="btn primary big" id="nextRoundBtn">${last ? 'Classifica finale' : 'Prossimo round'}</button>`);
+    $('#jokeBtn').onclick = () => {
+      $('#jokeBtn').classList.add('hidden');
+      $('#jokeA').classList.remove('hidden');
+      sfx.rimshot();
+      sfx.applause(1.2);
+    };
     $('#nextRoundBtn').onclick = () => {
       hideModal();
       if (last) gameOver(); else startRound();
@@ -957,6 +995,10 @@
     attemptSolve(v);
   });
   $('#startBtn').addEventListener('click', startFromSetup);
+  $('#host').addEventListener('click', () => {
+    if (['spinning', 'revealing', 'roundEnd'].includes(S.phase)) return;
+    tellJoke();
+  });
   $('#newGameBtn').addEventListener('click', () => { hideModal(); closeSolve(false); openSetup(); });
   const muteBtn = $('#muteBtn');
   const syncMute = () => { muteBtn.textContent = S.muted ? '🔇' : '🔊'; };
@@ -991,7 +1033,7 @@
   buildAudience();
   let resizeT = null;
   addEventListener('resize', () => { clearTimeout(resizeT); resizeT = setTimeout(buildAudience, 250); });
-  host('present', 'Benvenuti a Ruota Matta!', 0);
+  host('present', 'Benvenuti a Ruota Matta! Cliccami per una battuta 😄', 0);
   drawWheel();
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(drawWheel);
 })();
