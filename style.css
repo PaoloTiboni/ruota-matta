@@ -53,7 +53,7 @@ button { font: inherit; color: inherit; }
   width: 42px; height: 42px; border-radius: 12px; border: 1px solid var(--stroke);
   background: var(--panel); cursor: pointer; font-size: 1.15rem; transition: transform .15s, background .15s;
 }
-.icon-btn:hover { background: var(--panel-strong); transform: translateY(-1px); }
+.icon-btn:hover { background: #fff3df; border-color: #fff; transform: translateY(-1px); box-shadow: 0 6px 16px rgba(0,0,0,.35); }
 
 /* ---------- Layout ---------- */
 .game {
@@ -164,10 +164,19 @@ button { font: inherit; color: inherit; }
 .btn {
   border: 1px solid var(--stroke); background: var(--panel-strong); border-radius: 12px;
   padding: 10px 20px; cursor: pointer; font-weight: 600; font-size: 1rem;
-  transition: transform .12s, background .15s, opacity .15s;
+  transition: transform .12s, background .15s, color .15s, box-shadow .2s, opacity .15s;
 }
 .btn small { opacity: .7; font-weight: 500; margin-left: 4px; }
-.btn:hover:not(:disabled) { transform: translateY(-2px); background: rgba(255,255,255,.16); }
+/* Hover: il pulsante si accende invece di sbiadire */
+.btn:hover:not(:disabled) {
+  transform: translateY(-2px); background: #fff3df; color: #5a1a24; border-color: #fff;
+  box-shadow: 0 8px 20px rgba(0,0,0,.35), 0 0 0 3px rgba(255, 243, 223, .25);
+}
+.btn.primary:hover:not(:disabled) {
+  background: linear-gradient(90deg, #ff7088, #ffa05a); color: #fff; border-color: transparent;
+  box-shadow: 0 10px 26px rgba(255, 93, 115, .55), 0 0 0 3px rgba(255, 138, 61, .3);
+}
+.btn.cancel:hover:not(:disabled) { background: var(--gold); color: #4a1620; border-color: #fff3c4; }
 .btn:disabled { opacity: .38; cursor: not-allowed; }
 .btn.primary {
   background: linear-gradient(90deg, var(--pink), #ff8a3d); border-color: transparent; color: #fff;
@@ -184,10 +193,13 @@ button { font: inherit; color: inherit; }
 .key {
   height: 44px; border-radius: 10px; border: 1px solid var(--stroke);
   background: var(--panel-strong); cursor: pointer; font-weight: 700; font-size: 1.05rem;
-  transition: transform .1s, background .15s, opacity .15s;
+  transition: transform .1s, background .15s, color .15s, box-shadow .2s, opacity .15s;
 }
 .key.vowel { color: var(--gold); }
-.key:hover:not(:disabled) { background: rgba(255,255,255,.2); transform: translateY(-2px); }
+.key:hover:not(:disabled) {
+  background: var(--gold); color: #4a1620; border-color: #fff3c4; transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0,0,0,.35), 0 0 14px rgba(255, 209, 102, .55);
+}
 .key:disabled { cursor: default; opacity: .3; }
 .key.hit { background: rgba(77, 212, 172, .25); border-color: var(--good); opacity: .55; }
 .key.miss { background: rgba(255, 93, 115, .2); border-color: var(--bad); opacity: .45; text-decoration: line-through; }
