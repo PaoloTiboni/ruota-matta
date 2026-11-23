@@ -167,13 +167,22 @@
   }
 
   const PENTA = [72, 74, 76, 79, 81, 84, 86, 88, 91, 93]; // Do maggiore pentatonica
+  const SPIN_ARP = [72, 76, 79, 84, 79, 76]; // Do-Mi-Sol-Do, su e giù
   const sfx = {
     // Legnetto morbido sui pioli: leggermente diverso ogni volta
-    tick: () => {
-      noise({ dur: 0.035, vol: 0.09, freq: rand(1700, 2100), q: 3 });
-      voice(rand(560, 620), { type: 'triangle', vol: 0.05, dur: 0.05, attack: 0.002, wet: 0 });
+    // Carillon: ogni piolo suona la nota successiva di un arpeggio pentatonico (sempre consonante).
+    // slow = 0 a piena velocità → 1 quando la ruota sta per fermarsi.
+    tick: (step, slow) => {
+      const m = SPIN_ARP[step % SPIN_ARP.length];
+      const f = mtof(m);
+      const vol = 0.035 + 0.07 * slow;
+      const dur = 0.25 + 0.6 * slow;
+      voice(f, { vol, dur, attack: 0.004, wet: 0.45 });
+      voice(f * 2, { vol: vol * 0.25, dur: dur * 0.4, attack: 0.003, wet: 0.2 });
     },
-    whoosh: () => noise({ dur: 0.9, vol: 0.07, freq: 300, freqTo: 1800, q: 0.7, attack: 0.25, wet: 0.3 }),
+    // Partenza: accordo morbido che si gonfia e svanisce
+    whoosh: () => [60, 67, 72].forEach((m, i) =>
+      voice(mtof(m), { vol: 0.05, dur: 1.4, attack: 0.35, wet: 0.6, when: i * 0.04 })),
     land: () => { marimba(79); marimba(84, { when: 0.1 }); },
     ding: (i = 0) => bell(PENTA[i % PENTA.length], { vol: 0.12 }),
     miss: () => {
@@ -315,14 +324,25 @@
     const dur = rand(4000, 5400);
     const t0 = performance.now();
     let last = pointerIndex();
+    let lastNote = 0;
+    let step = 0;
     const frame = (now) => {
       if (g !== S.gen) return;
-      const p = Math.min(1, (now - t0) / dur);
+      // Il primo timestamp di rAF può precedere t0: limita il progresso a [0, 1]
+      const p = Math.max(0, Math.min(1, (now - t0) / dur));
       const e = 1 - Math.pow(1 - p, 4);
       S.rotation = start + extra * e;
       drawWheel();
       const idx = pointerIndex();
-      if (idx !== last) { last = idx; sfx.tick(); bumpPointer(); }
+      if (idx !== last) {
+        last = idx;
+        bumpPointer();
+        // Diradare le note quando la ruota è veloce, così non diventano un ronzio
+        if (now - lastNote > 90) {
+          lastNote = now;
+          sfx.tick(step++, Math.pow(p, 1.5));
+        }
+      }
       if (p < 1) requestAnimationFrame(frame);
       else { S.rotation %= Math.PI * 2; onLanded(SEGMENTS[idx]); }
     };
