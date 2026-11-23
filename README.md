@@ -8,6 +8,9 @@ Scritto in **HTML, CSS e JavaScript vanilla**: niente framework, niente build e 
 ## Caratteristiche
 
 - **Ruota disegnata su Canvas** con rotazione ease-out, un carillon intonato a ogni piolo e una freccia che "rimbalza".
+- **Presentatore animato in SVG** che gira la ruota, esulta ("WOW!"), si dispera alla bancarotta e commenta ogni mossa con un fumetto.
+- **Pubblico in studio** che applaude, salta e fa "ooooh", con applausi sintetizzati.
+- **Indizio per ogni frase**, in 9 categorie pensate per essere facili da indovinare.
 - **Tabellone animato** con caselle che si accendono e si girano; le parole vanno a capo intere.
 - **Fino a 3 giocatori**, ognuno umano o **CPU** con 3 livelli di difficoltà.
 - **Regole complete**: valore × occorrenze, vocali a 250 €, Bancarotta, Passa, bonus soluzione, 3 round.

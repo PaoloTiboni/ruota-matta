@@ -11,7 +11,7 @@
   const CPU_CONSONANTS = 'RNTLSCDMPVGBFZHQKJWXY'.split('');
   const CPU_VOWELS = 'EAIOU'.split('');
   const PLAYER_COLORS = ['#ffcc4d', '#4dd4ac', '#7aa2ff'];
-  const PALETTE = ['#ff5d73', '#ffb547', '#4dd4ac', '#5b8cff', '#b16cff', '#ff8a3d', '#2ec5e6', '#f25fd0'];
+  const PALETTE = ['#e63946', '#f7b538', '#2a9d8f', '#ff7b39', '#c9406a', '#e9a23b', '#3d8bd9', '#8e4ec6'];
   const LB_KEY = 'ruotamatta.leaderboard';
   const MUTE_KEY = 'ruotamatta.muted';
 
@@ -209,7 +209,91 @@
       [67, 72, 76, 79, 76, 79, 84].forEach((m, i) => marimba(m, { vol: 0.14, when: i * 0.13 }));
       [72, 76, 79, 84].forEach((m) => bell(m, { vol: 0.09, when: 0.95, dur: 2.4 }));
     },
+    // Applausi: tanti battiti di mani brevi e casuali, che salgono e poi si spengono
+    applause: (sec = 2.6) => {
+      if (!audio()) return;
+      const n = Math.floor(sec * 55);
+      for (let i = 0; i < n; i++) {
+        const when = Math.random() * sec;
+        const env = Math.sin(Math.PI * Math.min(1, when / sec)) * 0.8 + 0.2;
+        noise({ when, dur: rand(0.02, 0.05), vol: rand(0.02, 0.06) * env, freq: rand(900, 2600), q: rand(0.8, 2), wet: 0.4 });
+      }
+    },
+    // "Ooooh" del pubblico: voci morbide filtrate che scendono
+    ooh: () => {
+      const a = audio();
+      if (!a) return;
+      const t = a.currentTime;
+      const lp = a.createBiquadFilter();
+      lp.type = 'lowpass';
+      lp.frequency.value = 650;
+      lp.Q.value = 3;
+      lp.connect(master);
+      const s = a.createGain();
+      s.gain.value = 0.6;
+      lp.connect(s).connect(verb);
+      [196, 233, 262, 294, 175].forEach((f) => {
+        const o = a.createOscillator();
+        const g = a.createGain();
+        o.type = 'sawtooth';
+        o.frequency.setValueAtTime(f * rand(0.98, 1.02), t);
+        o.frequency.exponentialRampToValueAtTime(f * 0.78, t + 1.2);
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(0.035, t + 0.25);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + 1.3);
+        o.connect(g).connect(lp);
+        o.start(t);
+        o.stop(t + 1.4);
+      });
+    },
   };
+
+  // ================= Presentatore & pubblico =================
+  const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+  let hostTimer = null;
+  let bubbleTimer = null;
+  // mood: idle | present | spin | happy | wow | shock | sad | think. ms = 0 → resta così
+  function host(mood, text, ms = 2600) {
+    const h = $('#host');
+    const b = $('#bubble');
+    h.dataset.mood = 'idle';
+    void h.offsetWidth; // riavvia le animazioni anche se il mood è lo stesso
+    h.dataset.mood = mood;
+    clearTimeout(hostTimer);
+    clearTimeout(bubbleTimer);
+    if (text) {
+      b.textContent = text;
+      b.classList.remove('hide', 'pop');
+      void b.offsetWidth;
+      b.classList.add('pop');
+    }
+    if (ms) {
+      hostTimer = setTimeout(() => { h.dataset.mood = 'idle'; }, ms);
+      bubbleTimer = setTimeout(() => b.classList.add('hide'), ms + 400);
+    }
+  }
+
+  let crowdTimer = null;
+  function crowd(kind, ms = 2600) {
+    const a = $('#audience');
+    a.classList.remove('cheer', 'ooh', 'clap');
+    void a.offsetWidth;
+    a.classList.add(kind);
+    clearTimeout(crowdTimer);
+    crowdTimer = setTimeout(() => a.classList.remove(kind), ms);
+  }
+
+  const SKIN = ['#f1c7a5', '#e0a982', '#c68863', '#8d5a3b', '#f6d5bd', '#a86b48'];
+  const HAIR = ['#2b1d16', '#5a3a22', '#c9a15a', '#1a1a1a', '#8a3b1e', '#d9d2c5'];
+  const SHIRT = ['#e63946', '#2a9d8f', '#f7b538', '#3d8bd9', '#8e4ec6', '#ff7b39', '#c9406a', '#4caf50'];
+  function buildAudience() {
+    const a = $('#audience');
+    const n = Math.max(8, Math.ceil(innerWidth / 54));
+    a.innerHTML = Array.from({ length: n }, () => {
+      const style = `--s:${pick(SKIN)};--h:${pick(HAIR)};--c:${pick(SHIRT)};--o:${Math.round(rand(-6, 10))}px;--d:${rand(0, 0.25).toFixed(2)}s;--w:${pick(['-3px', '3px'])}`;
+      return `<div class="fan" style="${style}"><span class="hand l"></span><span class="hand r"></span><span class="head"></span><span class="torso"></span></div>`;
+    }).join('');
+  }
 
   // ================= Wheel =================
   const wheel = $('#wheel');
@@ -217,7 +301,7 @@
 
   function segStyle(s, i, r) {
     if (s.t === 'BANCAROTTA') return { fill: '#0b0a14', text: '#ff5d73' };
-    if (s.t === 'PASSA') return { fill: '#f4f2ff', text: '#2a2368' };
+    if (s.t === 'PASSA') return { fill: '#fff4e6', text: '#7a2433' };
     if (s.special) {
       const g = wctx.createRadialGradient(0, 0, r * 0.2, 0, 0, r);
       g.addColorStop(0, '#fff3c4');
@@ -238,8 +322,8 @@
 
     // Cornice
     const rim = c.createLinearGradient(-R, -R, R, R);
-    rim.addColorStop(0, '#3b2c8f');
-    rim.addColorStop(1, '#140f3a');
+    rim.addColorStop(0, '#a8452a');
+    rim.addColorStop(1, '#4a1414');
     c.beginPath();
     c.arc(0, 0, R - 2, 0, Math.PI * 2);
     c.fillStyle = rim;
@@ -319,6 +403,7 @@
     updateUI();
     const g = S.gen;
     sfx.whoosh();
+    host('spin', pick(['Vai con la ruota!', 'Gira, gira, gira…', 'Forza, che giro!', 'Vediamo dove si ferma…']), 0);
     const start = S.rotation;
     const extra = Math.PI * 2 * rand(3.5, 5.5) + rand(0, Math.PI * 2);
     const dur = rand(4000, 5400);
@@ -359,17 +444,23 @@
       p.round = 0;
       say(lost ? `💥 Bancarotta! ${p.name} perde ${fmt(lost)}.` : `💥 Bancarotta! Per fortuna ${p.name} non aveva niente da perdere.`, 'bad');
       shakePlayer(S.cur);
+      host('shock', pick(['Noooo! Bancarotta!', 'Ahia… che sfortuna!', 'Oh no, si riparte da zero!']));
+      crowd('ooh', 1400);
+      sfx.ooh();
       nextTurn(1800);
     } else if (seg.t === 'PASSA') {
       sfx.passa();
       ls.innerHTML = '<b class="bad">PASSA</b>';
       say(`⏭️ Passa! ${p.name} cede il turno.`, 'bad');
+      host('sad', pick(['Passa la mano!', 'Turno al prossimo!', 'Peccato, si passa!']));
       nextTurn(1500);
     } else {
       S.spinValue = seg.v;
       sfx.land();
       S.phase = 'consonant';
       ls.innerHTML = `Valore: <b>${fmt(seg.v)}</b>`;
+      if (seg.v >= 900) { host('wow', `${fmt(seg.v)}! Che colpo!`); crowd('clap', 900); }
+      else host('present', pick([`${fmt(seg.v)}! Una consonante?`, `${fmt(seg.v)} a lettera!`, `Bene, ${fmt(seg.v)}!`]));
       say(p.cpu ? `${fmt(seg.v)} a consonante. ${p.name} ci pensa…` : `${fmt(seg.v)} a consonante! Scegli una consonante.`);
       updateUI();
       if (p.cpu) cpuAct();
@@ -393,7 +484,10 @@
     const board = $('#board');
     board.innerHTML = '';
     S.tiles = [];
-    for (const rowText of layoutRows(S.puzzle.t)) {
+    const rows = layoutRows(S.puzzle.t);
+    // Le caselle si adattano alla riga più lunga (min 10 colonne per non diventare enormi)
+    board.style.setProperty('--cols', Math.max(10, ...rows.map((r) => r.length)));
+    for (const rowText of rows) {
       const row = document.createElement('div');
       row.className = 'row';
       for (const ch of rowText) {
@@ -413,6 +507,7 @@
       board.appendChild(row);
     }
     $('#category').textContent = S.puzzle.c;
+    $('#hint').innerHTML = S.puzzle.h ? `💡 <b>Indizio:</b> ${escapeHtml(S.puzzle.h)}` : '';
   }
 
   const letterTiles = (L) => S.tiles.filter((t) => t.key === L && !t.shown);
@@ -453,6 +548,9 @@
 
     if (count > 0) {
       const ms = revealLetter(L);
+      if (count >= 3) { host('wow', `Ben ${count} "${L}"! Fantastico!`); crowd('clap', 1000); sfx.applause(1); }
+      else if (count === 2) host('happy', pick([`Due "${L}"! Bravo!`, 'Doppietta!']));
+      else host('happy', pick(["C'è!", 'Ottima scelta!', 'Eccola lì!', 'Sì!']));
       if (!isV) {
         const gain = count * S.spinValue;
         p.round += gain;
@@ -468,6 +566,7 @@
       }, ms);
     } else {
       sfx.miss();
+      host('sad', pick([`Niente "${L}"…`, 'Peccato!', 'Eh no…', "Nooo, non c'è!"]));
       say(`❌ Nessuna "${L}". ${S.players.length > 1 ? 'Il turno passa.' : ''}`, 'bad');
       nextTurn(1500);
     }
@@ -479,6 +578,7 @@
     p.round -= VOWEL_COST;
     S.phase = 'vowel';
     sfx.buy();
+    host('present', pick(['Una vocale, ottima idea!', 'Vocale in arrivo!', 'Quale vocale?']));
     say(p.cpu ? `${p.name} compra una vocale…` : 'Vocale acquistata: scegline una.');
     updateUI();
     if (p.cpu) cpuAct();
@@ -491,6 +591,9 @@
       winRound();
     } else {
       sfx.miss();
+      sfx.ooh();
+      crowd('ooh', 1400);
+      host('sad', pick(['Quasi… ma no!', 'Uh, non è quella!', 'Che peccato!']));
       say(`❌ "${text.toUpperCase()}" non è la soluzione.`, 'bad');
       S.phase = 'wait';
       nextTurn(1600);
@@ -503,14 +606,18 @@
     later(() => {
       S.cur = (S.cur + 1) % S.players.length;
       S.phase = 'turn';
-      promptTurn();
+      promptTurn(true);
     }, delay);
   }
 
-  function promptTurn() {
+  function promptTurn(newTurn = false) {
     const p = P();
     const cons = remaining('cons').length;
     const vow = remaining('vow').length;
+    if (newTurn) {
+      if (p.cpu) host('think', `Vediamo cosa fa ${p.name}…`, 0);
+      else host('present', pick([`Tocca a te, ${p.name}!`, `${p.name}, a te la ruota!`, `Forza ${p.name}!`]));
+    }
     if (p.cpu) {
       say(`Tocca a ${p.name}…`);
     } else if (!cons && (!vow || p.round < VOWEL_COST)) {
@@ -532,9 +639,12 @@
     p.total += prize;
     S.players.forEach((q) => { q.round = 0; });
     sfx.win();
+    sfx.applause(3);
+    crowd('cheer', 3200);
+    host('wow', pick(['WOW! Risolta!!', 'Incredibile! Bravissimo!', 'Che campione!']), 4500);
     confetti();
     updateUI();
-    later(() => showRoundModal(p, prize), 1500);
+    later(() => showRoundModal(p, prize), 1800);
   }
 
   // ================= CPU =================
@@ -661,7 +771,7 @@
     if (!humanTurn() || S.phase !== 'turn') return;
     S.phase = 'solving';
     updateUI();
-    $('#solveHint').textContent = `Categoria: ${S.puzzle.c} · ${S.tiles.length} lettere`;
+    $('#solveHint').textContent = `${S.puzzle.c} · ${S.tiles.length} lettere${S.puzzle.h ? ' · 💡 ' + S.puzzle.h : ''}`;
     $('#solveInput').value = '';
     $('#solveModal').classList.remove('hidden');
     setTimeout(() => $('#solveInput').focus(), 50);
@@ -699,6 +809,9 @@
     const isRecord = saveScores();
     confetti();
     sfx.fanfare();
+    sfx.applause(4);
+    crowd('cheer', 4500);
+    host('wow', winner.cpu ? 'Che partita! Applausi!' : `Complimenti ${winner.name}!`, 0);
     showModal(`
       <h3>${winner.cpu ? `Vince ${escapeHtml(winner.name)} 🤖` : `Complimenti ${escapeHtml(winner.name)}! 🏆`}</h3>
       ${isRecord ? '<p class="muted" style="color:var(--gold)">Nuovo record in classifica!</p>' : ''}
@@ -793,6 +906,8 @@
     buildBoard();
     $('#lastSpin').textContent = 'Premi GIRA o la barra spaziatrice';
     S.phase = 'turn';
+    host('present', `Round ${S.round}! Categoria: ${S.puzzle.c}`, 3200);
+    crowd('clap', 900);
     promptTurn();
   }
 
@@ -873,6 +988,10 @@
   renderKeyboard();
   renderSetup();
   renderLeaderboard();
+  buildAudience();
+  let resizeT = null;
+  addEventListener('resize', () => { clearTimeout(resizeT); resizeT = setTimeout(buildAudience, 250); });
+  host('present', 'Benvenuti a Ruota Matta!', 0);
   drawWheel();
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(drawWheel);
 })();

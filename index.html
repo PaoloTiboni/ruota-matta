@@ -22,16 +22,92 @@
 
   <main class="game" id="game">
     <section class="wheel-area">
-      <div class="wheel-wrap" id="wheelWrap">
-        <div class="pointer" id="pointer"></div>
-        <canvas id="wheel" width="600" height="600" aria-label="Ruota"></canvas>
-        <button class="hub" id="spinBtn" title="Gira (Spazio)">GIRA</button>
+      <div class="stage">
+        <!-- Presentatore -->
+        <div class="host" id="host" data-mood="idle">
+          <div class="bubble hide" id="bubble"></div>
+          <svg class="host-svg" viewBox="0 0 200 320" aria-hidden="true">
+            <defs>
+              <linearGradient id="suitGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#2a3557" />
+                <stop offset="1" stop-color="#151b33" />
+              </linearGradient>
+            </defs>
+            <ellipse cx="100" cy="314" rx="66" ry="6" fill="rgba(0,0,0,.35)" />
+            <g class="body">
+              <rect x="73" y="248" width="24" height="66" rx="6" fill="#151b33" />
+              <rect x="103" y="248" width="24" height="66" rx="6" fill="#151b33" />
+              <rect x="70" y="306" width="29" height="9" rx="4" fill="#0c0c12" />
+              <rect x="101" y="306" width="29" height="9" rx="4" fill="#0c0c12" />
+              <path d="M58 156 Q100 140 142 156 L150 262 Q100 272 50 262 Z" fill="url(#suitGrad)" />
+              <path d="M84 146 L100 198 L116 146 Z" fill="#ffffff" />
+              <path d="M95 150 L105 150 L103 160 L97 160 Z" fill="#161616" />
+              <path d="M97 160 L103 160 L107 196 L100 206 L93 196 Z" fill="#222" />
+              <path d="M84 146 L100 202 L89 172 L76 160 Z" fill="#1d2645" />
+              <path d="M116 146 L100 202 L111 172 L124 160 Z" fill="#1d2645" />
+              <path d="M115 186 L131 183 L130 188 L115 190 Z" fill="#ffffff" />
+              <circle cx="100" cy="216" r="2.6" fill="#0b0f1e" />
+              <circle cx="100" cy="236" r="2.6" fill="#0b0f1e" />
+              <g class="arm arm-l">
+                <rect x="44" y="154" width="24" height="86" rx="12" fill="#222c4c" />
+                <rect x="47" y="232" width="18" height="8" rx="3" fill="#ffffff" />
+                <circle cx="56" cy="249" r="10" fill="#e9b48f" />
+              </g>
+              <g class="arm arm-r">
+                <rect x="132" y="154" width="24" height="86" rx="12" fill="#222c4c" />
+                <rect x="135" y="232" width="18" height="8" rx="3" fill="#ffffff" />
+                <circle cx="144" cy="249" r="10" fill="#e9b48f" />
+              </g>
+              <g class="head">
+                <rect x="89" y="120" width="22" height="30" rx="6" fill="#d9a07c" />
+                <ellipse cx="63" cy="92" rx="7" ry="11" fill="#e3a982" />
+                <ellipse cx="137" cy="92" rx="7" ry="11" fill="#e3a982" />
+                <ellipse cx="100" cy="90" rx="37" ry="45" fill="#efbd98" />
+                <path d="M63 90 Q63 139 100 142 Q137 139 137 90 Q134 112 122 116 Q110 108 100 110 Q90 108 78 116 Q66 112 63 90 Z" fill="#3a2a22" />
+                <path d="M83 113 Q100 102 117 113 Q108 109 100 111 Q92 109 83 113 Z" fill="#2c1f19" />
+                <path d="M62 86 Q55 45 98 41 Q147 39 139 84 Q136 63 122 58 Q104 66 84 58 Q68 64 62 86 Z" fill="#2b1d16" />
+                <path d="M82 50 Q102 34 122 47 Q104 45 91 55 Z" fill="#3b281e" />
+                <g class="brows">
+                  <path class="brow-l" d="M76 76 Q85 71 94 75" />
+                  <path class="brow-r" d="M106 75 Q115 71 124 76" />
+                </g>
+                <g class="eyes">
+                  <ellipse cx="86" cy="88" rx="4" ry="4.6" fill="#2b1d16" />
+                  <ellipse cx="114" cy="88" rx="4" ry="4.6" fill="#2b1d16" />
+                  <circle cx="87.4" cy="86.4" r="1.3" fill="#fff" />
+                  <circle cx="115.4" cy="86.4" r="1.3" fill="#fff" />
+                </g>
+                <path d="M100 90 Q96 102 101 104" stroke="#c98b68" stroke-width="2.5" fill="none" stroke-linecap="round" />
+                <g class="blush">
+                  <ellipse cx="75" cy="101" rx="6" ry="3.5" fill="#ff6b6b" opacity=".45" />
+                  <ellipse cx="125" cy="101" rx="6" ry="3.5" fill="#ff6b6b" opacity=".45" />
+                </g>
+                <path class="mouth m-smile" d="M89 117 Q100 129 111 117 Q100 121 89 117 Z" fill="#fff" stroke="#e7a88f" stroke-width="2" stroke-linejoin="round" />
+                <g class="mouth m-grin">
+                  <path d="M86 115 Q100 137 114 115 Z" fill="#6e1f22" stroke="#e7a88f" stroke-width="2" stroke-linejoin="round" />
+                  <path d="M88 116 L112 116 L110 121 L90 121 Z" fill="#fff" />
+                </g>
+                <ellipse class="mouth m-wow" cx="100" cy="123" rx="7" ry="9.5" fill="#5a1418" stroke="#e7a88f" stroke-width="2" />
+                <path class="mouth m-sad" d="M90 125 Q100 115 110 125" stroke="#e7a88f" stroke-width="3" fill="none" stroke-linecap="round" />
+                <path class="mouth m-flat" d="M92 121 Q100 123 108 120" stroke="#e7a88f" stroke-width="3" fill="none" stroke-linecap="round" />
+              </g>
+            </g>
+          </svg>
+          <div class="nametag">PAOLO</div>
+        </div>
+
+        <div class="wheel-wrap" id="wheelWrap">
+          <div class="pointer" id="pointer"></div>
+          <canvas id="wheel" width="600" height="600" aria-label="Ruota"></canvas>
+          <button class="hub" id="spinBtn" title="Gira (Spazio)">GIRA</button>
+        </div>
       </div>
       <div class="last-spin" id="lastSpin">Premi GIRA o la barra spaziatrice</div>
     </section>
 
     <section class="board-area">
       <div class="category" id="category">—</div>
+      <div class="hint" id="hint"></div>
       <div class="board" id="board"></div>
       <div class="message" id="message" aria-live="polite"></div>
       <div class="actions">
@@ -91,6 +167,8 @@
   <div class="overlay hidden" id="modal">
     <div class="modal" id="modalBody"></div>
   </div>
+
+  <div class="audience" id="audience" aria-hidden="true"></div>
 
   <canvas id="fx"></canvas>
 
