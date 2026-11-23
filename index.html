@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Gira la Frase — gioco di parole a ruota</title>
+  <meta name="description" content="Gira la ruota, indovina le lettere e risolvi la frase. Gioco browser in JavaScript vanilla." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <h1 class="logo">Gira<span>la</span>Frase</h1>
+    <div class="round-label" id="roundLabel"></div>
+    <div class="top-actions">
+      <button class="icon-btn" id="muteBtn" title="Audio on/off" aria-label="Audio on/off">🔊</button>
+      <button class="icon-btn" id="newGameBtn" title="Nuova partita" aria-label="Nuova partita">↻</button>
+    </div>
+  </header>
+
+  <main class="game" id="game">
+    <section class="wheel-area">
+      <div class="wheel-wrap" id="wheelWrap">
+        <div class="pointer" id="pointer"></div>
+        <canvas id="wheel" width="600" height="600" aria-label="Ruota"></canvas>
+        <button class="hub" id="spinBtn" title="Gira (Spazio)">GIRA</button>
+      </div>
+      <div class="last-spin" id="lastSpin">Premi GIRA o la barra spaziatrice</div>
+    </section>
+
+    <section class="board-area">
+      <div class="category" id="category">—</div>
+      <div class="board" id="board"></div>
+      <div class="message" id="message" aria-live="polite"></div>
+      <div class="actions">
+        <button class="btn" id="buyBtn">Compra vocale <small>250 €</small></button>
+        <button class="btn primary" id="solveBtn">Risolvi</button>
+      </div>
+      <div class="keyboard" id="keyboard"></div>
+    </section>
+
+    <section class="players" id="players"></section>
+  </main>
+
+  <!-- Setup -->
+  <div class="overlay" id="setup">
+    <div class="modal setup">
+      <h2 class="logo big">Gira<span>la</span>Frase</h2>
+      <p class="tagline">Gira la ruota, indovina le lettere, risolvi la frase.</p>
+      <div class="player-rows" id="playerRows"></div>
+      <label class="diff">Difficoltà CPU
+        <select id="difficulty">
+          <option value="0.35">Facile</option>
+          <option value="0.55" selected>Normale</option>
+          <option value="0.8">Difficile</option>
+        </select>
+      </label>
+      <p class="setup-error" id="setupError"></p>
+      <button class="btn primary big" id="startBtn">Inizia la partita</button>
+      <details class="rules">
+        <summary>Come si gioca</summary>
+        <ul>
+          <li><b>Gira</b> la ruota e scegli una consonante: guadagni il valore × le volte che compare.</li>
+          <li><b>Compra una vocale</b> per 250 € dal montepremi del round.</li>
+          <li><b>Risolvi</b> quando pensi di conoscere la frase: vinci il round + 500 € di bonus.</li>
+          <li><b>Bancarotta</b> azzera il montepremi del round, <b>Passa</b> cede il turno.</li>
+          <li>Lettera sbagliata o già chiamata? Il turno passa. Vince chi ha di più dopo 3 round.</li>
+          <li>Tastiera: <kbd>Spazio</kbd> gira, <kbd>A–Z</kbd> scegli lettera, <kbd>Invio</kbd> risolvi.</li>
+        </ul>
+      </details>
+      <div class="leaderboard" id="leaderboard"></div>
+    </div>
+  </div>
+
+  <!-- Risolvi -->
+  <div class="overlay hidden" id="solveModal">
+    <form class="modal" id="solveForm" autocomplete="off">
+      <h3>Risolvi la frase</h3>
+      <p class="muted" id="solveHint"></p>
+      <input id="solveInput" type="text" placeholder="Scrivi la soluzione…" spellcheck="false" />
+      <div class="row">
+        <button type="button" class="btn ghost" id="solveCancel">Annulla</button>
+        <button type="submit" class="btn primary">Conferma</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Fine round / partita -->
+  <div class="overlay hidden" id="modal">
+    <div class="modal" id="modalBody"></div>
+  </div>
+
+  <canvas id="fx"></canvas>
+
+  <script src="phrases.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>
